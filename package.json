@@ -1,0 +1,20 @@
+{
+    "name": "tiktok-data-collector",
+    "version": "1.0.0",
+    "description": "一个简单的TikTok视频数据采集工具",
+    "main": "examples/user-videos-to-csv.js",
+    "scripts": {
+        "start": "node examples/user-videos-to-csv.js"
+    },
+    "keywords": [
+        "tiktok",
+        "scraper",
+        "data",
+        "collector"
+    ],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "axios": "^1.6.7"
+    }
+}
