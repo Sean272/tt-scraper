@@ -5,6 +5,8 @@
 ## 功能特点
 
 - 获取指定用户的视频列表
+- 支持获取单个视频详细信息
+- 支持批量获取多个视频信息
 - 支持自定义获取视频数量
 - 数据保存为CSV格式，支持Excel打开
 - 包含视频ID、描述、作者、点赞数、评论数、分享数、播放数、创建时间、视频链接等信息
@@ -26,6 +28,7 @@ npm install
 
 ## 使用方法
 
+### 1. 获取用户视频列表
 基本命令格式：
 ```bash
 node examples/user-videos-to-csv.js <用户名> <视频数量>
@@ -36,13 +39,49 @@ node examples/user-videos-to-csv.js <用户名> <视频数量>
 node examples/user-videos-to-csv.js tiktok 20
 ```
 
+### 2. 获取单个视频信息
+基本命令格式：
+```bash
+node examples/single-video-info.js <视频ID>
+```
+
+例如，获取视频ID为"7123456789"的视频信息：
+```bash
+node examples/single-video-info.js 7123456789
+```
+
+### 3. 批量获取视频信息
+基本命令格式：
+```bash
+node examples/batch-videos-info.js <视频ID列表文件路径>
+```
+
+视频ID列表文件格式（每行一个视频ID）：
+```
+7123456789
+7123456790
+7123456791
+```
+
+例如，从文件读取视频ID列表并获取信息：
+```bash
+node examples/batch-videos-info.js video-ids.txt
+```
+
 ### 参数说明
 - `用户名`：TikTok用户名（不包含@符号）
 - `视频数量`：想要获取的视频数量（可选，默认30个）
+- `视频ID`：视频的唯一标识符
+- `视频ID列表文件路径`：包含多个视频ID的文本文件路径
 
 ### 输出文件
-- 生成的CSV文件将保存在 `examples/output` 目录下
-- 文件名格式：`用户名_videos.csv`
+- 用户视频列表CSV文件将保存在 `examples/output` 目录下
+- 单个视频信息将保存为JSON格式
+- 批量视频信息将保存为CSV格式
+- 文件名格式：
+  - 用户视频列表：`用户名_videos.csv`
+  - 单个视频信息：`视频ID_info.json`
+  - 批量视频信息：`batch_videos_info.csv`
 - CSV文件可以用Excel或其他电子表格软件打开
 
 ## 数据字段说明
@@ -62,8 +101,14 @@ node examples/user-videos-to-csv.js tiktok 20
 
 1. 此工具仅用于学习和研究目的
 2. 请遵守TikTok的使用条款和政策
-3. 不要频繁请求或批量采集数据，以免影响TikTok服务器
-4. 如果遇到请求失败，可能是因为请求过于频繁，请稍等片刻再试
+3. 不要频繁请求或批量采集数据，建议：
+   - 单个用户的请求间隔建议大于1秒
+   - 批量请求不同用户时，建议间隔大于5秒
+   - 单次采集数量建议不超过100个视频
+4. 如果遇到请求失败，可能是因为：
+   - 请求过于频繁，需要等待一段时间
+   - 用户账号不存在或已设为私密
+   - TikTok接口有变化
 
 ## 常见问题
 
