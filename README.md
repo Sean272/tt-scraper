@@ -1,149 +1,36 @@
-# TikTok 视频数据采集工具
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-这是一个简单的TikTok视频数据采集工具，可以获取指定用户的视频信息并保存为CSV格式。
+## Getting Started
 
-## 功能特点
+First, run the development server:
 
-- 获取指定用户的视频列表
-- 支持获取单个视频详细信息
-- 支持批量获取多个视频信息
-- 支持批量获取多个作者的视频信息
-- 支持自定义获取视频数量
-- 支持按时间范围筛选视频（周/月）
-- 数据保存为CSV格式，支持Excel打开
-- 包含视频ID、描述、作者、点赞数、评论数、分享数、播放数、创建时间、视频链接等信息
-
-## 安装步骤
-
-1. 确保您的电脑已安装 [Node.js](https://nodejs.org/) (版本 14.0.0 或更高)
-
-2. 克隆或下载此项目到本地：
 ```bash
-git clone [项目地址]
-cd tiktok-scraper-master
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-3. 安装依赖包：
-```bash
-npm install
-```
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## 使用方法
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-### 1. 获取用户视频列表
-基本命令格式：
-```bash
-node examples/user-videos-to-csv.js <用户名> <视频数量>
-```
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-例如，获取用户"tiktok"的20个最新视频：
-```bash
-node examples/user-videos-to-csv.js tiktok 20
-```
+## Learn More
 
-### 2. 获取单个视频信息
-基本命令格式：
-```bash
-node examples/single-video-info.js <视频ID>
-```
+To learn more about Next.js, take a look at the following resources:
 
-例如，获取视频ID为"7123456789"的视频信息：
-```bash
-node examples/single-video-info.js 7123456789
-```
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-### 3. 批量获取视频信息
-基本命令格式：
-```bash
-node examples/batch-videos-info.js <视频ID列表文件路径>
-```
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-视频ID列表文件格式（每行一个视频ID）：
-```
-7123456789
-7123456790
-7123456791
-```
+## Deploy on Vercel
 
-例如，从文件读取视频ID列表并获取信息：
-```bash
-node examples/batch-videos-info.js video-ids.txt
-```
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-### 4. 批量获取作者视频信息
-基本命令格式：
-```bash
-node examples/batch-authors-videos.js <作者列表文件路径> <时间范围> <时间单位>
-```
-
-作者列表文件格式（每行一个作者名）：
-```
-tiktok
-dance
-music
-```
-
-例如，获取这些作者过去2周的视频：
-```bash
-node examples/batch-authors-videos.js authors.csv 2 weeks
-```
-
-或者获取过去1个月的视频：
-```bash
-node examples/batch-authors-videos.js authors.csv 1 months
-```
-
-### 参数说明
-- `用户名`：TikTok用户名（不包含@符号）
-- `视频数量`：想要获取的视频数量（可选，默认30个）
-- `视频ID`：视频的唯一标识符
-- `视频ID列表文件路径`：包含多个视频ID的文本文件路径
-- `作者列表文件路径`：包含多个作者名的文本文件路径
-- `时间范围`：要获取的视频时间范围（数字）
-- `时间单位`：时间范围的单位（weeks或months）
-
-### 输出文件
-- 用户视频列表CSV文件将保存在 `examples/output` 目录下
-- 单个视频信息将保存为JSON格式
-- 批量视频信息将保存为CSV格式
-- 文件名格式：
-  - 用户视频列表：`用户名_videos.csv`
-  - 单个视频信息：`视频ID_info.json`
-  - 批量视频信息：`batch_videos_info.csv`
-  - 批量作者视频：`batch_authors_videos_YYYY-MM-DD.csv`
-- CSV文件可以用Excel或其他电子表格软件打开
-
-## 数据字段说明
-
-生成的CSV文件包含以下字段：
-- 视频ID：视频的唯一标识符
-- 描述：视频描述文本
-- 作者：视频作者用户名
-- 点赞数：视频获得的点赞数量
-- 评论数：视频获得的评论数量
-- 分享数：视频的分享次数
-- 播放数：视频的播放次数
-- 创建时间：视频发布时间
-- 视频链接：视频的TikTok网页链接
-
-## 注意事项
-
-1. 此工具仅用于学习和研究目的
-2. 请遵守TikTok的使用条款和政策
-3. 不要频繁请求或批量采集数据，建议：
-   - 单个用户的请求间隔建议大于1秒
-   - 批量请求不同用户时，建议间隔大于5秒
-   - 单次采集数量建议不超过100个视频
-4. 如果遇到请求失败，可能是因为：
-   - 请求过于频繁，需要等待一段时间
-   - 用户账号不存在或已设为私密
-   - TikTok接口有变化
-
-## 常见问题
-
-Q: CSV文件中的中文显示乱码怎么办？
-A: 请使用Excel打开时，选择"数据" -> "从文本/CSV" -> 选择文件 -> 确保文件原始格式为"UTF-8"
-
-Q: 获取数据失败怎么办？
-A: 可能是网络问题或请求过于频繁，请稍等几分钟后重试
-
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
