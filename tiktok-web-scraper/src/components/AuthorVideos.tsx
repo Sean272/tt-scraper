@@ -37,16 +37,6 @@ export default function AuthorVideos() {
     { title: '分享数', dataIndex: 'shares', key: 'shares' },
     { title: '播放数', dataIndex: 'plays', key: 'plays' },
     { title: '创建时间', dataIndex: 'createTime', key: 'createTime' },
-    {
-      title: '视频链接',
-      dataIndex: 'videoUrl',
-      key: 'videoUrl',
-      render: (text: string) => (
-        <a href={text} target="_blank" rel="noopener noreferrer">
-          查看视频
-        </a>
-      ),
-    },
   ];
 
   // 单个作者查询
