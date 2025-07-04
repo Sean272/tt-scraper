@@ -122,7 +122,6 @@ node examples/batch-authors-followers.js examples/sample-authors.csv
 ```bash
 node examples/batch-authors-followers.js authors.csv username
 ```
-
 ---
 
 ## 网页端主要功能
@@ -172,7 +171,6 @@ node examples/batch-authors-followers.js authors.csv username
 - 是否认证
 - 个人简介
 - 查询状态
-
 ---
 
 ## 常见问题
