@@ -10,6 +10,7 @@
 - 获取单个视频详细信息
 - 批量获取多个视频信息
 - 批量获取多个作者的视频信息
+- 批量查询作者粉丝数量和统计信息
 - 支持自定义获取视频数量
 - 支持按时间范围筛选视频（周/月）
 - 数据保存为 CSV 格式，支持 Excel 打开
@@ -35,13 +36,19 @@ cd tt-scraper
 
 ---
 
-### 2. 一键启动网页版（推荐）
+### 2. 启动网页版（推荐）
 
-适合无开发经验用户，自动安装依赖并启动服务。
+适合无开发经验用户，提供可视化界面操作。
 
 ```bash
-chmod +x start.sh   # 仅首次需要
-./start.sh
+# 进入网页版目录
+cd tiktok-web-scraper
+
+# 安装依赖（仅首次需要）
+npm install
+
+# 启动开发服务器
+npm run dev
 ```
 
 启动后，浏览器访问 [http://localhost:3000](http://localhost:3000) 即可使用可视化网页工具。
@@ -63,27 +70,28 @@ node examples/user-videos-to-csv.js tiktok 20
 #### 获取单个视频信息
 
 ```bash
-node examples/single-video-info.js <视频ID>
+node examples/show-video-details.js <视频ID>
 ```
 示例：
 ```bash
-node examples/single-video-info.js 7123456789
+node examples/show-video-details.js 7123456789
 ```
 
 #### 批量获取视频信息
 
 ```bash
-node examples/batch-videos-info.js <视频ID列表文件路径>
+node examples/batch-video-details.js <视频ID列表文件路径>
 ```
-示例文件内容（每行一个视频ID）：
+示例文件内容（CSV格式，第一列为视频ID）：
 ```
+video_id
 7123456789
 7123456790
 7123456791
 ```
 示例命令：
 ```bash
-node examples/batch-videos-info.js video-ids.txt
+node examples/batch-video-details.js video-ids.csv
 ```
 
 #### 批量获取作者视频信息
@@ -126,11 +134,11 @@ node examples/batch-authors-followers.js authors.csv username
 
 ## 网页端主要功能
 
-- **作者视频查询**：支持单个作者和批量作者视频采集，支持下载结果
-- **视频信息查询**：支持单个视频和批量视频信息采集
-- **作者粉丝查询**：支持批量查询作者粉丝数量、获赞数等统计信息
+- **作者视频查询**：支持单个作者和批量作者视频采集，支持时间范围筛选，可下载结果
+- **视频信息查询**：支持单个视频和批量视频信息查询，可下载结果
+- **作者粉丝查询**：支持批量查询作者粉丝数量、获赞数等统计信息，可下载结果
 
-所有操作均可在网页端一站式完成，界面友好，适合非技术用户。
+所有操作均可在网页端一站式完成，支持文件上传和直接输入两种方式，界面友好，适合非技术用户。
 
 ---
 
@@ -141,8 +149,8 @@ node examples/batch-authors-followers.js authors.csv username
 - 批量视频信息保存为 CSV
 - 文件名格式：
   - 用户视频列表：`用户名_videos.csv`
-  - 单个视频信息：`视频ID_info.json`
-  - 批量视频信息：`batch_videos_info.csv`
+  - 单个视频信息：在控制台显示，无文件输出
+  - 批量视频信息：`batch_videos_YYYY-MM-DDTHH-MM-SS.csv`
   - 批量作者视频：`batch_authors_videos_YYYY-MM-DD.csv`
   - 批量作者粉丝：`batch_authors_followers_YYYY-MM-DD.csv`
 
@@ -181,8 +189,8 @@ node examples/batch-authors-followers.js authors.csv username
 - **采集失败？**  
   可能是网络问题、请求过于频繁或账号私密，建议稍后重试。
 
-- **Mac 用户如何双击启动？**  
-  可用 Automator 制作"应用程序"，或右键 `start.sh` 用终端打开。
+- **Mac 用户如何启动？**  
+  在终端中执行上述启动命令，或使用 Automator 制作应用程序快捷方式。
 
 ---
 
