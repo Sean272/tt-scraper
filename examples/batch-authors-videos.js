@@ -242,31 +242,25 @@ async function main() {
     if (fileContent.includes(',') || authorsFile.toLowerCase().endsWith('.csv')) {
         // CSV格式，支持时长过滤
         console.log('检测到CSV格式，尝试读取时长过滤信息...');
-        const csv = require('csv-parser');
-        await new Promise((resolve, reject) => {
-            fs.createReadStream(authorsFile)
-                .pipe(csv())
-                .on('data', (row) => {
-                    const rowValues = Object.values(row);
-                    const author = rowValues[0]?.trim();
-                    const duration = rowValues[1]?.trim();
-                    
-                    if (author && !author.startsWith('#')) {
-                        const item = { author };
-                        // 如果第二列存在且是有效数字，则添加时长过滤
-                        if (duration && /^\d+$/.test(duration)) {
-                            item.expectedDuration = parseInt(duration);
-                        }
-                        authorsData.push(item);
+        
+        // 直接读取文件内容并解析，避免csv-parser的列名问题
+        const lines = fileContent.split('\n').filter(line => line.trim());
+        for (const line of lines) {
+            const parts = line.split(',').map(part => part.trim());
+            if (parts.length >= 1) {
+                const author = parts[0];
+                const duration = parts[1];
+                
+                if (author && !author.startsWith('#')) {
+                    const item = { author };
+                    // 如果第二列存在且是有效数字，则添加时长过滤
+                    if (duration && /^\d+$/.test(duration)) {
+                        item.expectedDuration = parseInt(duration);
                     }
-                })
-                .on('end', () => {
-                    resolve();
-                })
-                .on('error', (err) => {
-                    reject(err);
-                });
-        });
+                    authorsData.push(item);
+                }
+            }
+        }
     } else {
         // 纯文本格式，每行一个作者
         console.log('检测到纯文本格式...');
@@ -327,10 +321,10 @@ async function main() {
             }
         } catch (error) {
             failCount++;
-            console.error(`处理作者 ${author} 时出错:`, error.message);
+            console.error(`处理作者 ${authorData.author} 时出错:`, error.message);
         }
         
-        if (authors.indexOf(author) !== authors.length - 1) {
+        if (authorsData.indexOf(authorData) !== authorsData.length - 1) {
             console.log('\n等待3秒后继续...');
             await new Promise(resolve => setTimeout(resolve, 3000));
         }
