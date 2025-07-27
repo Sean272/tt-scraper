@@ -28,18 +28,27 @@ async function processBatchVideos(inputCsvPath) {
     const outputCsvPath = path.join(outputDir, `batch_videos_${timestamp}.csv`);
     
     // 读取输入的CSV文件
-    const videoIds = [];
+    const videoData = [];
     
     try {
-        // 从CSV读取视频ID
+        // 从CSV读取视频ID和可选的时长数据
         await new Promise((resolve, reject) => {
             fs.createReadStream(inputCsvPath)
                 .pipe(csv())
                 .on('data', (row) => {
+                    const rowValues = Object.values(row);
                     // 获取第一列数据作为视频ID（无论列名是什么）
-                    const videoId = Object.values(row)[0];
+                    const videoId = rowValues[0];
+                    // 获取第二列数据作为时长（如果存在）
+                    const duration = rowValues[1];
+                    
                     if (videoId && /^\d+$/.test(videoId)) { // 确保ID是纯数字
-                        videoIds.push(videoId);
+                        const item = { videoId };
+                        // 如果第二列存在且是有效数字，则添加时长信息
+                        if (duration && /^\d+$/.test(duration)) {
+                            item.expectedDuration = parseInt(duration);
+                        }
+                        videoData.push(item);
                     }
                 })
                 .on('end', () => {
@@ -50,9 +59,15 @@ async function processBatchVideos(inputCsvPath) {
                 });
         });
         
-        console.log(`从CSV文件中读取到 ${videoIds.length} 个视频ID`);
+        console.log(`从CSV文件中读取到 ${videoData.length} 个视频ID`);
         
-        if (videoIds.length === 0) {
+        // 检查是否启用了时长过滤模式
+        const hasDurationFilter = videoData.some(item => item.expectedDuration !== undefined);
+        if (hasDurationFilter) {
+            console.log('✅ 检测到时长过滤模式：仅时长匹配的视频会被标记为CapCut');
+        }
+        
+        if (videoData.length === 0) {
             console.error('未找到有效的视频ID，请检查输入文件格式');
             return;
         }
@@ -61,14 +76,18 @@ async function processBatchVideos(inputCsvPath) {
         const allVideosData = [];
         
         // 依次处理每个视频ID
-        for (let i = 0; i < videoIds.length; i++) {
-            const videoId = videoIds[i];
-            console.log(`\n处理视频 ${i + 1}/${videoIds.length}: ${videoId}`);
+        for (let i = 0; i < videoData.length; i++) {
+            const item = videoData[i];
+            const { videoId, expectedDuration } = item;
+            console.log(`\n处理视频 ${i + 1}/${videoData.length}: ${videoId}${expectedDuration ? ` (期望时长: ${expectedDuration}秒)` : ''}`);
             
             try {
-                const videoData = await getVideoDetails(videoId);
-                if (videoData) {
-                    allVideosData.push(videoData);
+                // 传递时长过滤信息给getVideoDetails
+                const durationFilter = expectedDuration ? 
+                    { targetDuration: expectedDuration, tolerance: 1 } : null;
+                const videoDetails = await getVideoDetails(videoId, durationFilter);
+                if (videoDetails) {
+                    allVideosData.push(videoDetails);
                     console.log(`成功获取视频 ${videoId} 的信息`);
                 }
             } catch (error) {
@@ -76,7 +95,7 @@ async function processBatchVideos(inputCsvPath) {
             }
             
             // 每处理5个视频暂停一下，避免API限制
-            if (i < videoIds.length - 1 && (i + 1) % 5 === 0) {
+            if (i < videoData.length - 1 && (i + 1) % 5 === 0) {
                 console.log('暂停5秒后继续...');
                 await sleep(5000);
             }
@@ -109,7 +128,7 @@ async function processBatchVideos(inputCsvPath) {
     }
 }
 
-async function getVideoDetails(videoId) {
+async function getVideoDetails(videoId, durationFilter = null) {
     let retries = 0;
     
     while (retries < MAX_RETRIES) {
@@ -146,7 +165,7 @@ async function getVideoDetails(videoId) {
             const videoData = response.data.aweme_list[0];
             
             // 进行CapCut检测
-            const capCutAnalysis = detectCapCutSource(videoData);
+            const capCutAnalysis = detectCapCutSource(videoData, { durationFilter });
             
             // 准备CSV数据
             return {

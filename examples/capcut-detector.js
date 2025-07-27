@@ -32,12 +32,39 @@ const PLATFORM_CODES = {
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // CapCut检测器
-function detectCapCutSource(videoData) {
+function detectCapCutSource(videoData, options = {}) {
+    const { durationFilter = null } = options; // 时长过滤器：{targetDuration: number, tolerance: number}
+    
     const indicators = {
         isCapCut: false,
         confidence: 0,
         evidence: []
     };
+    
+    // 如果启用了时长过滤模式，先检查时长是否匹配
+    if (durationFilter) {
+        const videoDuration = videoData.video?.duration || videoData.duration;
+        if (videoDuration !== undefined) {
+            const { targetDuration, tolerance = 1 } = durationFilter;
+            const isWithinDurationRange = Math.abs(videoDuration - targetDuration) <= tolerance;
+            
+            if (!isWithinDurationRange) {
+                // 时长不匹配，直接返回非CapCut
+                indicators.isCapCut = false;
+                indicators.confidence = 0;
+                indicators.evidence.push(`时长不匹配: 实际${videoDuration}秒，期望${targetDuration}±${tolerance}秒`);
+                return indicators;
+            } else {
+                indicators.evidence.push(`时长匹配: ${videoDuration}秒在${targetDuration}±${tolerance}秒范围内`);
+            }
+        } else {
+            // 无法获取视频时长，标记为非CapCut
+            indicators.isCapCut = false;
+            indicators.confidence = 0;
+            indicators.evidence.push('无法获取视频时长，在时长过滤模式下标记为非CapCut');
+            return indicators;
+        }
+    }
     
     // 检查 source_platform 字段
     if (videoData.music?.source_platform) {

@@ -83,13 +83,25 @@ node examples/show-video-details.js 7123456789
 ```bash
 node examples/batch-video-details.js <视频ID列表文件路径>
 ```
-示例文件内容（CSV格式，第一列为视频ID）：
+
+**基础模式** - 示例文件内容（CSV格式，第一列为视频ID）：
 ```
 video_id
 7123456789
 7123456790
 7123456791
 ```
+
+**时长过滤模式** - 示例文件内容（CSV格式，第二列为视频时长）：
+```
+video_id,duration
+7123456789,15
+7123456790,30
+7123456791,16
+```
+
+> 🎯 **时长过滤模式说明**：当CSV文件包含第二列时长数据时，只有实际视频时长在指定时长±1秒范围内的视频才会被标记为CapCut，其余视频标记为否。这对于筛选特定时长的CapCut模板视频非常有用。
+
 示例命令：
 ```bash
 node examples/batch-video-details.js video-ids.csv
@@ -100,12 +112,24 @@ node examples/batch-video-details.js video-ids.csv
 ```bash
 node examples/batch-authors-videos.js <作者列表文件路径> <时间范围> <时间单位>
 ```
-示例文件内容（每行一个作者名）：
+
+**基础模式** - 示例文件内容（每行一个作者名）：
 ```
 tiktok
 dance
 music
 ```
+
+**CSV格式（可选时长过滤）** - 示例文件内容：
+```
+author,duration
+tiktok,15
+dance,30
+music,16
+```
+
+> 🎯 **时长过滤模式说明**：当CSV文件包含第二列时长数据时，对于该作者的所有视频，只有实际视频时长在指定时长±1秒范围内的视频才会被标记为CapCut，其余视频标记为否。
+
 示例命令：
 ```bash
 node examples/batch-authors-videos.js authors.csv 2 weeks
@@ -165,12 +189,26 @@ node examples/batch-authors-followers.js authors.csv username
 | 10036 | 其他工具 | ✅ 已确认 |
 | 24 | 其他工具 | ✅ 已确认 |
 
+### 时长过滤模式 🆕
+
+当输入CSV文件包含第二列时长数据时，自动启用**时长过滤模式**：
+
+- **过滤规则**：只有实际视频时长在指定时长**±1秒**范围内的视频才可能被标记为CapCut
+- **应用范围**：批量视频查询、批量作者视频查询
+- **使用场景**：
+  - 筛选特定时长的CapCut模板视频
+  - 分析固定时长视频的制作工具分布
+  - 针对性分析某个时长范围的内容创作模式
+
+**示例**：如果指定时长为15秒，则只有14-16秒的视频会进行CapCut检测判断，其他时长的视频直接标记为"否"。
+
 ### 应用场景
 
 - **内容分析**：了解创作者的工具使用偏好
 - **市场研究**：分析CapCut在短视频制作中的占比
 - **竞品分析**：识别使用特定编辑工具的视频内容
 - **趋势分析**：追踪不同编辑工具的使用趋势
+- **模板分析**：筛选特定时长的CapCut模板视频
 
 ---
 
