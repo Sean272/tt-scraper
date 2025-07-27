@@ -43,7 +43,15 @@ function detectCapCutSource(videoData, options = {}) {
     
     // 如果启用了时长过滤模式，先检查时长是否匹配
     if (durationFilter) {
-        const videoDuration = videoData.video?.duration || videoData.duration;
+        // 优先使用video.duration（毫秒），如果没有则使用music.duration（秒）
+        let videoDuration = videoData.video?.duration;
+        if (videoDuration !== undefined) {
+            // 如果是毫秒，转换为秒
+            videoDuration = videoDuration / 1000;
+        } else {
+            videoDuration = videoData.duration || videoData.music?.duration;
+        }
+        
         if (videoDuration !== undefined) {
             const { targetDuration, tolerance = 1 } = durationFilter;
             const isWithinDurationRange = Math.abs(videoDuration - targetDuration) <= tolerance;
