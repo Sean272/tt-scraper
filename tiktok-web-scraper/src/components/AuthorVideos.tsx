@@ -16,6 +16,9 @@ interface VideoData {
   plays: number;
   createTime: string;
   videoUrl: string;
+  isCapCut: string;
+  capCutConfidence: string;
+  sourcePlatform: string;
 }
 
 export default function AuthorVideos() {
@@ -37,6 +40,17 @@ export default function AuthorVideos() {
     { title: '分享数', dataIndex: 'shares', key: 'shares' },
     { title: '播放数', dataIndex: 'plays', key: 'plays' },
     { title: '创建时间', dataIndex: 'createTime', key: 'createTime' },
+    { 
+      title: 'CapCut投稿', 
+      dataIndex: 'isCapCut', 
+      key: 'isCapCut', 
+      render: (text: string) => {
+        if (text === '是') return <span style={{ color: '#52c41a' }}>✓ 是</span>;
+        if (text === '否') return <span style={{ color: '#ff4d4f' }}>✗ 否</span>;
+        return text || '-';
+      }
+    },
+    { title: '来源平台', dataIndex: 'sourcePlatform', key: 'sourcePlatform' },
   ];
 
   // 单个作者查询

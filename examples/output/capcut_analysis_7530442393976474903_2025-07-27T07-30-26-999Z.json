@@ -1,0 +1,17 @@
+{
+  "video_id": "7530442393976474903",
+  "capcut_analysis": {
+    "isCapCut": false,
+    "confidence": 0,
+    "evidence": []
+  },
+  "platform_fields": {
+    "music_source_platform": 10033,
+    "added_sound_music_info_source_platform": 10033,
+    "item_distribute_source": "force_input",
+    "item_source_category": 0,
+    "shoot_tab_name": "video_15",
+    "content_type": "video"
+  },
+  "timestamp": "2025-07-27T07:30:26.998Z"
+}

@@ -1,6 +1,41 @@
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const { detectCapCutSource } = require('./capcut-detector');
+
+// 获取单个视频的详细信息用于CapCut检测
+async function getVideoDetailForCapCut(videoId) {
+    try {
+        const requestHeaders = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+            'Accept': '*/*',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Referer': 'https://www.tiktok.com/',
+            'Connection': 'keep-alive'
+        };
+        
+        const url = `https://api16-normal-c-useast1a.tiktokv.com/aweme/v1/feed/?aweme_id=${videoId}`;
+        const response = await axios.get(url, {
+            headers: requestHeaders,
+            timeout: 10000
+        });
+
+        if (response.data && response.data.aweme_list && response.data.aweme_list.length > 0) {
+            const videoData = response.data.aweme_list[0];
+            const capCutAnalysis = detectCapCutSource(videoData);
+            return {
+                isCapCut: capCutAnalysis.isCapCut ? '是' : '否',
+                sourcePlatform: videoData.music?.source_platform || ''
+            };
+        }
+    } catch (error) {
+        console.log(`获取视频 ${videoId} 的CapCut信息失败: ${error.message}`);
+    }
+    return {
+        isCapCut: '未知',
+        sourcePlatform: ''
+    };
+}
 
 // 检查命令行参数
 if (process.argv.length < 5) {
@@ -44,7 +79,9 @@ const headers = [
     '分享数',
     '播放数',
     '创建时间',
-    '视频链接'
+    '视频链接',
+    '是否CapCut投稿',
+    '来源平台代码'
 ];
 writeStream.write(headers.join(',') + '\n');
 
@@ -148,20 +185,39 @@ async function processAuthor(username) {
 
         console.log(`找到 ${filteredVideos.length} 个视频在指定时间范围内`);
 
-        // 格式化视频数据
-        const formattedVideos = filteredVideos.map(video => ({
-            author: username,
-            videoId: video.id,
-            description: (video.desc || '').replace(/[\r\n,]/g, ' '), // 移除换行符和逗号
-            likes: video.stats.diggCount,
-            comments: video.stats.commentCount,
-            shares: video.stats.shareCount,
-            plays: video.stats.playCount,
-            createTime: new Date(video.createTime * 1000).toLocaleString('zh-CN', {
-                timeZone: 'Asia/Shanghai'
-            }),
-            videoUrl: `https://www.tiktok.com/@${username}/video/${video.id}`
-        }));
+        // 格式化视频数据并添加CapCut检测
+        console.log(`正在检测 ${username} 的 ${filteredVideos.length} 个视频的CapCut信息...`);
+        const formattedVideos = [];
+        
+        for (let i = 0; i < filteredVideos.length; i++) {
+            const video = filteredVideos[i];
+            process.stdout.write(`处理视频 ${i + 1}/${filteredVideos.length}...`);
+            
+            // 获取CapCut检测信息
+            const capCutInfo = await getVideoDetailForCapCut(video.id);
+            console.log(` ${capCutInfo.isCapCut}`);
+            
+            formattedVideos.push({
+                author: username,
+                videoId: video.id,
+                description: (video.desc || '').replace(/[\r\n,]/g, ' '), // 移除换行符和逗号
+                likes: video.stats.diggCount,
+                comments: video.stats.commentCount,
+                shares: video.stats.shareCount,
+                plays: video.stats.playCount,
+                createTime: new Date(video.createTime * 1000).toLocaleString('zh-CN', {
+                    timeZone: 'Asia/Shanghai'
+                }),
+                videoUrl: `https://www.tiktok.com/@${username}/video/${video.id}`,
+                isCapCut: capCutInfo.isCapCut,
+                sourcePlatform: capCutInfo.sourcePlatform
+            });
+            
+            // 添加延迟避免请求过快
+            if (i < filteredVideos.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        }
 
         // 打印前3个视频的预览
         if (formattedVideos.length > 0) {
@@ -207,7 +263,9 @@ async function main() {
                         video.shares,
                         video.plays,
                         video.createTime,
-                        video.videoUrl
+                        video.videoUrl,
+                        video.isCapCut,
+                        video.sourcePlatform
                     ].map(escapeCsvField).join(',');
                     writeStream.write(row + '\n');
                 });

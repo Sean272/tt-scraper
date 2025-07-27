@@ -1,6 +1,7 @@
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const { detectCapCutSource } = require('./capcut-detector');
 
 // 重试配置
 const MAX_RETRIES = 3;
@@ -81,6 +82,20 @@ async function getVideoDetails(videoId) {
             
             const videoData = response.data.aweme_list[0];
             
+            // 保存完整的原始数据到JSON文件
+            const rawOutputDir = path.join(__dirname, 'output');
+            if (!fs.existsSync(rawOutputDir)) {
+                fs.mkdirSync(rawOutputDir, { recursive: true });
+            }
+            
+            const rawTimestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const jsonFilePath = path.join(rawOutputDir, `raw_video_${videoId}_${rawTimestamp}.json`);
+            fs.writeFileSync(jsonFilePath, JSON.stringify(videoData, null, 2), 'utf8');
+            console.log(`\n完整原始数据已保存到: ${jsonFilePath}`);
+            
+            // 进行CapCut检测
+            const capCutAnalysis = detectCapCutSource(videoData);
+            
             // 准备CSV数据
             const csvData = {
                 // 基本信息
@@ -137,6 +152,11 @@ async function getVideoDetails(videoId) {
                 '风险等级': videoData.risk_infos?.type || '',
                 '位置信息': videoData.location || '',
                 
+                // CapCut检测信息
+                '是否CapCut投稿': capCutAnalysis.isCapCut ? '是' : '否',
+                'CapCut置信度': (capCutAnalysis.confidence * 100).toFixed(1) + '%',
+                '来源平台代码': videoData.music?.source_platform || '',
+                
                 // 特效信息
                 '特效数量': videoData.effect_stickers ? videoData.effect_stickers.length.toString() : '0',
                 '特效列表': videoData.effect_stickers ? videoData.effect_stickers.map(effect => {
@@ -182,6 +202,8 @@ async function getVideoDetails(videoId) {
             console.log('播放量:', csvData['播放量']);
             console.log('点赞数:', csvData['点赞数']);
             console.log('评论数:', csvData['评论数']);
+            console.log('是否CapCut投稿:', csvData['是否CapCut投稿']);
+            console.log('来源平台代码:', csvData['来源平台代码']);
             
             // 显示特效信息
             if (videoData.effect_stickers && videoData.effect_stickers.length > 0) {

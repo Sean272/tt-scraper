@@ -1,0 +1,22 @@
+{
+  "video_id": "7528297470892182797",
+  "capcut_analysis": {
+    "isCapCut": true,
+    "confidence": 2.2,
+    "evidence": [
+      "音乐 source_platform: 72 (CapCut (已确认))",
+      "added_sound_music_info source_platform: 72 (CapCut (已确认))",
+      "文本中发现CapCut关键词: #CapCut @CapCut @TikTok @Instagram Creators #Love @Black TikTok #BlackTikTok #creatorsearchinsights #fyp #black #men #fashion #fypシ @DMX @SWIZZ BEATZ ",
+      "文本中发现CapCut关键词: CapCut ID: RoxyP.\nhttps://mobile.capcutshare.com/s/Zs8asFuKT/"
+    ]
+  },
+  "platform_fields": {
+    "music_source_platform": 72,
+    "added_sound_music_info_source_platform": 72,
+    "item_distribute_source": "force_input",
+    "item_source_category": 0,
+    "shoot_tab_name": "upload",
+    "content_type": "video"
+  },
+  "timestamp": "2025-07-27T07:56:03.029Z"
+}

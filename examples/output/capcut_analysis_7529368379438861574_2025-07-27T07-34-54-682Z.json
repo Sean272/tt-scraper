@@ -1,0 +1,20 @@
+{
+  "video_id": "7529368379438861574",
+  "capcut_analysis": {
+    "isCapCut": true,
+    "confidence": 1.6,
+    "evidence": [
+      "音乐 source_platform: 72 (CapCut (已确认))",
+      "added_sound_music_info source_platform: 72 (CapCut (已确认))"
+    ]
+  },
+  "platform_fields": {
+    "music_source_platform": 72,
+    "added_sound_music_info_source_platform": 72,
+    "item_distribute_source": "force_input",
+    "item_source_category": 0,
+    "shoot_tab_name": "photo",
+    "content_type": "video"
+  },
+  "timestamp": "2025-07-27T07:34:54.681Z"
+}

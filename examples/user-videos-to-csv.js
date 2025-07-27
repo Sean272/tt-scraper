@@ -1,6 +1,41 @@
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const { detectCapCutSource } = require('./capcut-detector');
+
+// 获取单个视频的详细信息用于CapCut检测
+async function getVideoDetailForCapCut(videoId) {
+    try {
+        const requestHeaders = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+            'Accept': '*/*',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Referer': 'https://www.tiktok.com/',
+            'Connection': 'keep-alive'
+        };
+        
+        const url = `https://api16-normal-c-useast1a.tiktokv.com/aweme/v1/feed/?aweme_id=${videoId}`;
+        const response = await axios.get(url, {
+            headers: requestHeaders,
+            timeout: 10000
+        });
+
+        if (response.data && response.data.aweme_list && response.data.aweme_list.length > 0) {
+            const videoData = response.data.aweme_list[0];
+            const capCutAnalysis = detectCapCutSource(videoData);
+            return {
+                isCapCut: capCutAnalysis.isCapCut ? '是' : '否',
+                sourcePlatform: videoData.music?.source_platform || ''
+            };
+        }
+    } catch (error) {
+        console.log(`获取视频 ${videoId} 的CapCut信息失败: ${error.message}`);
+    }
+    return {
+        isCapCut: '未知',
+        sourcePlatform: ''
+    };
+}
 
 async function getUserVideos(username, limit = 30) {
     try {
@@ -34,13 +69,22 @@ async function getUserVideos(username, limit = 30) {
         });
 
         if (response.data && response.data.itemList) {
-            // 准备CSV数据
+            // 准备CSV数据 (增加CapCut检测字段)
             const csvData = [
-                ['视频ID', '描述', '作者', '点赞数', '评论数', '分享数', '播放数', '创建时间', '视频链接']
+                ['视频ID', '描述', '作者', '点赞数', '评论数', '分享数', '播放数', '创建时间', '视频链接', '是否CapCut投稿', '来源平台代码']
             ];
 
-            response.data.itemList.forEach(video => {
+            // 异步处理每个视频，添加CapCut检测
+            console.log('正在检测CapCut投稿信息...');
+            for (let i = 0; i < response.data.itemList.length; i++) {
+                const video = response.data.itemList[i];
                 const createTime = new Date(video.createTime * 1000).toLocaleString();
+                
+                // 获取CapCut检测信息
+                process.stdout.write(`处理视频 ${i + 1}/${response.data.itemList.length}...`);
+                const capCutInfo = await getVideoDetailForCapCut(video.id);
+                console.log(` ${capCutInfo.isCapCut}`);
+                
                 csvData.push([
                     video.id,
                     video.desc.replace(/,/g, ' '), // 移除描述中的逗号，避免CSV格式错误
@@ -50,9 +94,16 @@ async function getUserVideos(username, limit = 30) {
                     video.stats.shareCount,
                     video.stats.playCount,
                     createTime,
-                    `https://www.tiktok.com/@${video.author.uniqueId}/video/${video.id}`
+                    `https://www.tiktok.com/@${video.author.uniqueId}/video/${video.id}`,
+                    capCutInfo.isCapCut,
+                    capCutInfo.sourcePlatform
                 ]);
-            });
+                
+                // 添加延迟避免请求过快
+                if (i < response.data.itemList.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            }
 
             // 将数据转换为CSV格式
             const csvContent = csvData.map(row => row.join(',')).join('\n');

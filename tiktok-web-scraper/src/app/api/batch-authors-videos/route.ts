@@ -85,6 +85,9 @@ export async function POST(request: Request) {
         '播放数': 'plays',
         '创建时间': 'createTime',
         '视频链接': 'videoUrl',
+        '是否CapCut投稿': 'isCapCut',
+        'CapCut置信度': 'capCutConfidence',
+        '来源平台代码': 'sourcePlatform',
       };
       const data = rows.slice(1).map(row => {
         const values = row.split(',');

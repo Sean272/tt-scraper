@@ -16,6 +16,9 @@ interface VideoData {
   plays: string;
   createTime: string;
   videoUrl: string;
+  isCapCut: string;
+  capCutConfidence: string;
+  sourcePlatform: string;
 }
 
 export default function VideoInfo() {
@@ -32,6 +35,17 @@ export default function VideoInfo() {
     { title: '分享数', dataIndex: 'shares', key: 'shares', render: (text: string) => text || '-' },
     { title: '播放数', dataIndex: 'plays', key: 'plays', render: (text: string) => text || '-' },
     { title: '创建时间', dataIndex: 'createTime', key: 'createTime', render: (text: string) => text || '-' },
+    { 
+      title: 'CapCut投稿', 
+      dataIndex: 'isCapCut', 
+      key: 'isCapCut', 
+      render: (text: string) => {
+        if (text === '是') return <span style={{ color: '#52c41a' }}>✓ 是</span>;
+        if (text === '否') return <span style={{ color: '#ff4d4f' }}>✗ 否</span>;
+        return text || '-';
+      }
+    },
+    { title: '来源平台', dataIndex: 'sourcePlatform', key: 'sourcePlatform', render: (text: string) => text || '-' },
   ];
 
   const onFinish = async (values: { videoId: string }) => {

@@ -55,6 +55,9 @@ export async function POST(request: Request) {
         '视频链接': 'videoUrl',
         '链接': 'videoUrl',
         '视频地址': 'videoUrl',
+        '是否CapCut投稿': 'isCapCut',
+        'CapCut置信度': 'capCutConfidence',
+        '来源平台代码': 'sourcePlatform',
       };
       const clean = (s: string) => s.replace(/^"|"$/g, '').replace(/\r|\n/g, '').trim();
       const data = records.map((row: Record<string, string>) => {

@@ -6,6 +6,7 @@ const { createObjectCsvWriter } = require('csv-writer');
 
 // 重用单个视频详情的处理逻辑
 const { formatNumber, formatDate, formatBoolean, formatArray, formatCSVField, MAX_RETRIES, RETRY_DELAY, sleep } = require('./show-video-details');
+const { detectCapCutSource } = require('./capcut-detector');
 
 // 批量处理视频
 async function processBatchVideos(inputCsvPath) {
@@ -144,6 +145,9 @@ async function getVideoDetails(videoId) {
             
             const videoData = response.data.aweme_list[0];
             
+            // 进行CapCut检测
+            const capCutAnalysis = detectCapCutSource(videoData);
+            
             // 准备CSV数据
             return {
                 // 基本信息
@@ -199,6 +203,11 @@ async function getVideoDetails(videoId) {
                 '视频类型': videoData.aweme_type || '',
                 '风险等级': videoData.risk_infos?.type || '',
                 '位置信息': videoData.location || '',
+                
+                // CapCut检测信息
+                '是否CapCut投稿': capCutAnalysis.isCapCut ? '是' : '否',
+                'CapCut置信度': (capCutAnalysis.confidence * 100).toFixed(1) + '%',
+                '来源平台代码': videoData.music?.source_platform || '',
                 
                 // 特效信息
                 '特效数量': videoData.effect_stickers ? videoData.effect_stickers.length.toString() : '0',
