@@ -107,6 +107,38 @@ video_id,duration
 node examples/batch-video-details.js video-ids.csv
 ```
 
+#### 批量获取视频信息（含下载功能）🆕
+
+```bash
+node examples/batch-video-details-with-download.js <视频ID列表文件路径> [--download]
+```
+
+**功能特点**：
+- 支持视频信息获取和视频文件下载
+- 自动跳过已下载的视频文件
+- 下载统计和状态跟踪
+- 支持时长过滤模式
+
+**使用方法**：
+```bash
+# 仅获取视频信息，不下载视频
+node examples/batch-video-details-with-download.js video-ids.csv
+
+# 获取视频信息并下载视频文件
+node examples/batch-video-details-with-download.js video-ids.csv --download
+```
+
+**输出文件**：
+- CSV数据文件：`examples/output/batch_videos_YYYY-MM-DDTHH-MM-SS.csv`
+- 视频文件：`examples/downloads/视频ID.mp4`
+- 新增字段：`下载状态`、`本地文件路径`
+
+**下载统计**：
+- 尝试下载数量
+- 下载成功数量
+- 下载失败数量
+- 下载目录位置
+
 #### 批量获取作者视频信息
 
 ```bash
@@ -241,6 +273,8 @@ node examples/batch-authors-followers.js authors.csv username
 - **是否CapCut投稿**：自动检测是否通过CapCut制作
 - **CapCut置信度**：检测结果的可信度
 - **来源平台代码**：视频编辑工具的平台标识
+- **下载状态**：视频下载状态（成功/失败/无可用链接）
+- **本地文件路径**：下载的视频文件本地路径
 
 ### 作者粉丝数据字段
 - 作者用户名
