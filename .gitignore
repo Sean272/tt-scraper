@@ -1,10 +1,14 @@
+# Dependencies
 node_modules/
 reverse_eng/
 build/
 coverage/
 garbage/
 
+# OS files
 .DS_Store
+
+# Data files
 *.csv
 *.zip
 ex.js
@@ -12,4 +16,24 @@ ex.ts
 yarn.lock
 yarn-error.log
 proxy
-bulk
+bulk%
+
+# User local files - these should not be uploaded to GitHub
+examples/downloads/
+examples/output/
+examples/temp/
+tiktok-web-scraper/.next/
+tiktok-web-scraper/node_modules/
+
+# Large media files
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.wmv
+*.flv
+*.webm
+
+# Analysis output files
+*.json
+*.txt
