@@ -1,8 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { execSync } from 'child_process';
-import { createObjectCsvWriter } from 'csv-writer';
+import { getUserVideos } from './user-videos-to-csv.js';
 
 // 获取当前文件的目录路径
 const __filename = fileURLToPath(import.meta.url);
@@ -58,125 +57,109 @@ if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir);
 }
 
-// 准备CSV文件
-const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-const csvPath = path.join(outputDir, `batch_authors_videos_${timestamp.split('T')[0]}.csv`);
-
-const csvWriter = createObjectCsvWriter({
-  path: csvPath,
-  header: [
-    { id: 'id', title: '视频ID' },
-    { id: 'description', title: '描述' },
-    { id: 'author', title: '作者' },
-    { id: 'likes', title: '点赞数' },
-    { id: 'comments', title: '评论数' },
-    { id: 'plays', title: '播放数' },
-    { id: 'createTime', title: '创建时间' },
-    { id: 'isCapCut', title: 'CapCut投稿' },
-    { id: 'sourcePlatform', title: '来源平台' }
-  ],
-  encoding: 'utf8'
-});
-
-// 处理结果统计
+// 准备汇总的视频数据
+let allVideosData = [];
 let successAuthors = 0;
 let failedAuthors = 0;
 let totalVideos = 0;
-let allVideos = [];
 
 // 批量处理作者
-for (const author of authors) {
+for (let i = 0; i < authors.length; i++) {
+  const author = authors[i];
   try {
-    console.log(`\n正在获取作者 ${author} 的视频...`);
+    console.log(`\n[${i + 1}/${authors.length}] 正在获取作者 ${author} 的视频...`);
     
-    // 调用获取视频列表的脚本
-    const scriptPath = path.join(__dirname, 'user-videos-to-csv.js');
-    const skipFlag = skipCapcutCheck ? ' --skip-capcut-check' : '';
-    const cmd = `node "${scriptPath}" "${author}" ${timeRange} ${timeUnit}${skipFlag}`;
-    const result = execSync(cmd, { encoding: 'utf8' });
+    // 调用获取视频数据的函数，返回数据而不是保存文件
+    const result = await getUserVideos(author, timeRange, timeUnit, skipCapcutCheck, true);
     
-    // 解析输出找到视频数量
-    const videosMatch = result.match(/找到 (\d+) 个视频在指定时间范围内/);
-    const videoCount = videosMatch ? parseInt(videosMatch[1]) : 0;
-    
-    if (videoCount > 0) {
-      console.log(`找到 ${videoCount} 个视频在指定时间范围内`);
-      
-      // 如果不跳过 CapCut 检查，则进行检查
-      if (!skipCapcutCheck) {
-        console.log(`正在检测 ${author} 的 ${videoCount} 个视频的CapCut信息...`);
-        // 这里添加 CapCut 检测逻辑
-      }
-
-      // 解析视频数据
-      const videoMatches = result.match(/视频 \d+:[\s\S]+?(?=视频 \d+:|$)/g);
-      if (videoMatches) {
-        const videos = videoMatches.map(videoText => {
-          const video = {
-            author,
-            id: '',
-            description: '',
-            likes: '0',
-            plays: '0',
-            comments: '0',
-            createTime: '',
-            isCapCut: '否',
-            sourcePlatform: ''
-          };
-
-          // 提取视频信息
-          const descMatch = videoText.match(/描述: (.*)/);
-          const likesMatch = videoText.match(/点赞数: (\d+)/);
-          const playsMatch = videoText.match(/播放数: (\d+)/);
-          const timeMatch = videoText.match(/创建时间: (.*)/);
-
-          if (descMatch) video.description = descMatch[1].trim();
-          if (likesMatch) video.likes = likesMatch[1];
-          if (playsMatch) video.plays = playsMatch[1];
-          if (timeMatch) video.createTime = timeMatch[1].trim();
-
-          return video;
-        });
-
-        allVideos.push(...videos);
-        totalVideos += videoCount;
-        successAuthors++;
-        
-        // 显示前3个视频的预览
-        console.log('\n前3个视频预览:');
-        videoMatches.slice(0, 3).forEach(preview => console.log('\n' + preview.trim()));
-        
-        console.log(`\n成功获取 ${videoCount} 个视频`);
-      }
-    } else {
-      console.log('未找到视频');
-      // 即使没有找到视频，也算作成功处理（因为可能确实没有视频）
+    if (result && result.videos && result.videos.length > 0) {
+      console.log(`✓ 找到 ${result.videoCount} 个视频在指定时间范围内`);
+      allVideosData.push(...result.videos);
+      totalVideos += result.videoCount;
       successAuthors++;
+      
+      // 显示前3个视频的预览
+      console.log('前3个视频预览:');
+      result.videos.slice(0, 3).forEach((video, index) => {
+        console.log(`  视频 ${index + 1}:`);
+        console.log(`  - 描述: ${video.description}`);
+        console.log(`  - 点赞数: ${video.likes}`);
+        console.log(`  - 播放数: ${video.plays}`);
+        console.log(`  - 创建时间: ${video.createTime}`);
+      });
+    } else {
+      console.log('✗ 未找到视频');
+      successAuthors++; // 即使没有找到视频，也算作成功处理
     }
   } catch (error) {
-    console.error(`处理作者 ${author} 失败:`, error.message);
+    console.error(`✗ 处理作者 ${author} 失败:`, error.message);
     failedAuthors++;
+  }
+  
+  // 在处理作者之间添加延迟，避免请求过快
+  if (i < authors.length - 1) {
+    console.log('等待 2 秒后继续下一个作者...');
+    await new Promise(resolve => setTimeout(resolve, 2000));
   }
 }
 
-// 如果有视频数据，写入CSV
-if (allVideos.length > 0) {
-  await csvWriter.writeRecords(allVideos);
-}
-
-console.log('\n获取完成:');
-console.log(`成功处理 ${successAuthors} 个作者`);
-console.log(`失败处理 ${failedAuthors} 个作者`);
-console.log(`\n成功获取总计 ${totalVideos} 个视频信息`);
-
-if (totalVideos > 0) {
-  console.log(`数据已保存到: ${csvPath}`);
+// 生成汇总的CSV文件
+if (allVideosData.length > 0) {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const csvPath = path.join(outputDir, `batch_authors_videos_${timestamp.split('T')[0]}.csv`);
+  
+  // 准备CSV数据
+  const csvData = [
+    ['视频ID', '描述', '作者', '点赞数', '评论数', '分享数', '播放数', '创建时间', '视频链接', '是否CapCut投稿', '来源平台代码']
+  ];
+  
+  allVideosData.forEach(video => {
+    csvData.push([
+      video.id,
+      `"${video.description.replace(/"/g, '""')}"`, // 正确处理CSV中的引号和换行
+      video.author,
+      video.likes,
+      video.comments,
+      video.shares,
+      video.plays,
+      video.createTime,
+      video.videoUrl,
+      video.isCapCut,
+      video.sourcePlatform
+    ]);
+  });
+  
+  // 将数据转换为CSV格式并保存
+  const csvContent = csvData.map(row => row.join(',')).join('\n');
+  const BOM = '\ufeff'; // 添加BOM标记以确保中文正确显示
+  fs.writeFileSync(csvPath, BOM + csvContent, { encoding: 'utf8' });
+  
+  console.log('\n=== 批量查询完成 ===');
+  console.log(`✓ 成功处理 ${successAuthors} 个作者`);
+  console.log(`✗ 失败处理 ${failedAuthors} 个作者`);
+  console.log(`📊 总计获取 ${totalVideos} 个视频信息`);
+  console.log(`💾 数据已汇总保存到: ${csvPath}`);
+  
+  // 按作者统计视频数量
+  const authorStats = {};
+  allVideosData.forEach(video => {
+    authorStats[video.author] = (authorStats[video.author] || 0) + 1;
+  });
+  
+  console.log('\n各作者视频统计:');
+  Object.entries(authorStats).forEach(([author, count]) => {
+    console.log(`  ${author}: ${count} 个视频`);
+  });
   
   // 打印CSV使用说明
-  console.log('\n如何正确打开CSV文件：');
+  console.log('\n📋 如何正确打开CSV文件：');
   console.log('1. 使用Excel打开时，选择"数据" -> "从文本/CSV"');
   console.log('2. 在打开对话框中，确保"文件原始格式"选择为"UTF-8"');
   console.log('3. 点击"加载"即可正确显示中文内容');
+  console.log('4. 如果仍有乱码，可以尝试用记事本打开查看原始数据');
 } else {
-  console.log('未找到任何视频，不生成CSV文件');
+  console.log('\n=== 批量查询完成 ===');
+  console.log(`✓ 成功处理 ${successAuthors} 个作者`);
+  console.log(`✗ 失败处理 ${failedAuthors} 个作者`);
+  console.log('❌ 未找到任何视频，不生成CSV文件');
 }

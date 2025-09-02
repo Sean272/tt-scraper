@@ -63,7 +63,7 @@ function getTimeRangeStart(timeRange, timeUnit) {
     return Math.floor(start.getTime() / 1000);
 }
 
-async function getUserVideos(username, timeRange, timeUnit, skipCapcutCheck = false) {
+async function getUserVideos(username, timeRange, timeUnit, skipCapcutCheck = false, returnData = false) {
     try {
         const headers = {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
@@ -193,13 +193,10 @@ async function getUserVideos(username, timeRange, timeUnit, skipCapcutCheck = fa
                 return;
             }
 
-            // 准备CSV数据
-            const csvData = [
-                ['视频ID', '描述', '作者', '点赞数', '评论数', '分享数', '播放数', '创建时间', '视频链接', '是否CapCut投稿', '来源平台代码']
-            ];
-
-            // 处理每个视频
+            // 处理每个视频的数据
+            const videoDataList = [];
             console.log(`正在检测 ${username} 的 ${filteredVideos.length} 个视频的CapCut信息...`);
+            
             for (let i = 0; i < filteredVideos.length; i++) {
                 const video = filteredVideos[i];
                 const createTime = new Date(video.createTime * 1000).toLocaleString();
@@ -212,25 +209,57 @@ async function getUserVideos(username, timeRange, timeUnit, skipCapcutCheck = fa
                     console.log(capCutInfo.isCapCut);
                 }
                 
-                csvData.push([
-                    video.id,
-                    video.desc.replace(/,/g, ' '), // 移除描述中的逗号，避免CSV格式错误
-                    video.author.uniqueId,
-                    video.stats.diggCount,
-                    video.stats.commentCount,
-                    video.stats.shareCount,
-                    video.stats.playCount,
-                    createTime,
-                    `https://www.tiktok.com/@${video.author.uniqueId}/video/${video.id}`,
-                    capCutInfo.isCapCut,
-                    capCutInfo.sourcePlatform
-                ]);
+                const videoData = {
+                    id: video.id,
+                    description: video.desc.replace(/,/g, ' '), // 移除描述中的逗号，避免CSV格式错误
+                    author: video.author.uniqueId,
+                    likes: video.stats.diggCount,
+                    comments: video.stats.commentCount,
+                    shares: video.stats.shareCount,
+                    plays: video.stats.playCount,
+                    createTime: createTime,
+                    videoUrl: `https://www.tiktok.com/@${video.author.uniqueId}/video/${video.id}`,
+                    isCapCut: capCutInfo.isCapCut,
+                    sourcePlatform: capCutInfo.sourcePlatform
+                };
+                
+                videoDataList.push(videoData);
                 
                 // 添加延迟避免请求过快
                 if (!skipCapcutCheck && i < filteredVideos.length - 1) {
                     await new Promise(resolve => setTimeout(resolve, 1000));
                 }
             }
+
+            // 如果需要返回数据而不是保存文件
+            if (returnData) {
+                return {
+                    username: username,
+                    videoCount: filteredVideos.length,
+                    videos: videoDataList
+                };
+            }
+
+            // 准备CSV数据
+            const csvData = [
+                ['视频ID', '描述', '作者', '点赞数', '评论数', '分享数', '播放数', '创建时间', '视频链接', '是否CapCut投稿', '来源平台代码']
+            ];
+            
+            videoDataList.forEach(video => {
+                csvData.push([
+                    video.id,
+                    video.description,
+                    video.author,
+                    video.likes,
+                    video.comments,
+                    video.shares,
+                    video.plays,
+                    video.createTime,
+                    video.videoUrl,
+                    video.isCapCut,
+                    video.sourcePlatform
+                ]);
+            });
 
             // 将数据转换为CSV格式
             const csvContent = csvData.map(row => row.join(',')).join('\n');
@@ -279,5 +308,11 @@ if (!username || !timeRange || !timeUnit) {
     process.exit(1);
 }
 
-console.log(`正在获取用户 @${username} 的视频信息...`);
-getUserVideos(username, timeRange, timeUnit, skipCapcutCheck);
+// 如果直接运行此脚本
+if (import.meta.url === `file://${process.argv[1]}`) {
+    console.log(`正在获取用户 @${username} 的视频信息...`);
+    getUserVideos(username, timeRange, timeUnit, skipCapcutCheck);
+}
+
+// 导出函数供其他模块使用
+export { getUserVideos };
