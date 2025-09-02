@@ -91,42 +91,83 @@ async function getUserVideos(username, timeRange, timeUnit, skipCapcutCheck = fa
             throw new Error('无法获取用户secUid');
         }
 
-        // 获取用户视频列表
+        // 获取用户视频列表（支持分页）
         const videosUrl = 'https://www.tiktok.com/api/post/item_list/';
-        const response = await axios.get(videosUrl, {
-            params: {
-                aid: '1988',
-                app_language: 'en',
-                browser_language: 'en-US',
-                browser_name: 'Mozilla',
-                browser_version: '5.0',
-                cookie_enabled: 'true',
-                device_id: Date.now(),
-                device_platform: 'web_pc',
-                focus_state: 'true',
-                from_page: 'user',
-                history_len: '3',
-                is_fullscreen: 'false',
-                is_page_visible: 'true',
-                language: 'en',
-                os: 'mac',
-                priority_region: '',
-                referer: '',
-                region: 'US',
-                screen_height: '1080',
-                screen_width: '1920',
-                secUid: secUid,
-                count: 30,
-                cursor: 0,
-                verifyFp: '',
-                webcast_language: 'en'
-            },
-            headers
-        });
+        let allVideos = [];
+        let cursor = 0;
+        let hasMore = true;
+        let pageCount = 0;
+        const maxPages = 50; // 最多获取50页，避免无限循环
 
-        if (response.data && response.data.itemList) {
+        while (hasMore && pageCount < maxPages) {
+            console.log(`正在获取第 ${pageCount + 1} 页视频...`);
+            
+            const response = await axios.get(videosUrl, {
+                params: {
+                    aid: '1988',
+                    app_language: 'en',
+                    browser_language: 'en-US',
+                    browser_name: 'Mozilla',
+                    browser_version: '5.0',
+                    cookie_enabled: 'true',
+                    device_id: Date.now(),
+                    device_platform: 'web_pc',
+                    focus_state: 'true',
+                    from_page: 'user',
+                    history_len: '3',
+                    is_fullscreen: 'false',
+                    is_page_visible: 'true',
+                    language: 'en',
+                    os: 'mac',
+                    priority_region: '',
+                    referer: '',
+                    region: 'US',
+                    screen_height: '1080',
+                    screen_width: '1920',
+                    secUid: secUid,
+                    count: 30,
+                    cursor: cursor,
+                    verifyFp: '',
+                    webcast_language: 'en'
+                },
+                headers
+            });
+
+            if (response.data && response.data.itemList) {
+                const pageVideos = response.data.itemList;
+                allVideos.push(...pageVideos);
+                
+                // 检查是否还有更多数据
+                hasMore = response.data.hasMore || false;
+                if (response.data.cursor) {
+                    cursor = response.data.cursor;
+                } else if (response.data.maxCursor) {
+                    cursor = parseInt(response.data.maxCursor);
+                }
+                
+                console.log(`第 ${pageCount + 1} 页获取到 ${pageVideos.length} 个视频，总计 ${allVideos.length} 个视频`);
+                
+                // 如果没有获取到视频，跳出循环
+                if (pageVideos.length === 0) {
+                    hasMore = false;
+                }
+                
+                // 添加延迟避免请求过快
+                if (hasMore && pageCount < maxPages - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            } else {
+                hasMore = false;
+            }
+            
+            pageCount++;
+        }
+
+        console.log(`总共获取到 ${allVideos.length} 个视频`);
+
+        if (allVideos.length > 0) {
             // 过滤指定时间范围内的视频
-            const filteredVideos = response.data.itemList.filter(video => 
+            const filteredVideos = allVideos.filter(video => 
                 video.createTime >= startTime
             );
 
