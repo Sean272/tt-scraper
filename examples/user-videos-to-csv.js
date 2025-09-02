@@ -137,15 +137,30 @@ async function getUserVideos(username, timeRange, timeUnit, skipCapcutCheck = fa
                 const pageVideos = response.data.itemList;
                 allVideos.push(...pageVideos);
                 
-                // 检查是否还有更多数据
-                hasMore = response.data.hasMore || false;
-                if (response.data.cursor) {
-                    cursor = response.data.cursor;
-                } else if (response.data.maxCursor) {
-                    cursor = parseInt(response.data.maxCursor);
+                // 检查当前页是否有符合时间范围的视频
+                const currentPageInRange = pageVideos.filter(video => video.createTime >= startTime);
+                const currentPageOutRange = pageVideos.filter(video => video.createTime < startTime);
+                
+                console.log(`第 ${pageCount + 1} 页获取到 ${pageVideos.length} 个视频，其中 ${currentPageInRange.length} 个在时间范围内，总计 ${allVideos.length} 个视频`);
+                
+                // 如果当前页所有视频都超出时间范围，且已经有一些符合条件的视频，则停止
+                if (currentPageOutRange.length === pageVideos.length && currentPageInRange.length === 0) {
+                    const totalInRange = allVideos.filter(video => video.createTime >= startTime).length;
+                    if (totalInRange > 0) {
+                        console.log(`检测到当前页所有视频都超出时间范围，提前停止扫描`);
+                        hasMore = false;
+                    }
                 }
                 
-                console.log(`第 ${pageCount + 1} 页获取到 ${pageVideos.length} 个视频，总计 ${allVideos.length} 个视频`);
+                // 检查是否还有更多数据
+                if (hasMore) {
+                    hasMore = response.data.hasMore || false;
+                    if (response.data.cursor) {
+                        cursor = response.data.cursor;
+                    } else if (response.data.maxCursor) {
+                        cursor = parseInt(response.data.maxCursor);
+                    }
+                }
                 
                 // 如果没有获取到视频，跳出循环
                 if (pageVideos.length === 0) {

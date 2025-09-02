@@ -91,7 +91,8 @@ for (const author of authors) {
     
     // 调用获取视频列表的脚本
     const scriptPath = path.join(__dirname, 'user-videos-to-csv.js');
-    const cmd = `node "${scriptPath}" "${author}" ${timeRange} ${timeUnit}`;
+    const skipFlag = skipCapcutCheck ? ' --skip-capcut-check' : '';
+    const cmd = `node "${scriptPath}" "${author}" ${timeRange} ${timeUnit}${skipFlag}`;
     const result = execSync(cmd, { encoding: 'utf8' });
     
     // 解析输出找到视频数量
